@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Analytics | Event Media Pro</title>
+    <style>
+        body { font-family: 'Inter', sans-serif; background: linear-gradient(135deg, #0f2027, #203a43, #2c5364); margin: 0; padding: 0; color: white; min-height: 100vh; }
+        .navbar { background: rgba(15, 23, 42, 0.8); padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; backdrop-filter: blur(10px); }
+        .navbar h2 { margin: 0; font-size: 1.5em; background: -webkit-linear-gradient(#38ef7d, #11998e); background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .nav-items a { color: #94a3b8; text-decoration: none; font-weight: bold; margin-right: 20px; transition: 0.3s; }
+        .nav-items a:hover { color: white; }
+        
+        .container { max-width: 1200px; margin: 40px auto; padding: 0 20px; }
+        .header-section { text-align: center; margin-bottom: 50px; }
+        .header-section h1 { font-size: 2.5em; margin: 0; }
+        .header-section p { color: #cbd5e1; font-size: 1.1em; }
+
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 25px; }
+        
+        .stat-card { background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(15px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 20px; padding: 30px; text-align: center; box-shadow: 0 25px 50px rgba(0,0,0,0.2); transition: transform 0.3s; }
+        .stat-card:hover { transform: translateY(-5px); border-color: rgba(56, 239, 125, 0.5); }
+        
+        .stat-icon { font-size: 2.5em; margin-bottom: 15px; display: block; }
+        .stat-number { font-size: 3em; font-weight: bold; margin: 0; background: -webkit-linear-gradient(#ffffff, #94a3b8); background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .stat-label { color: #38ef7d; font-weight: bold; text-transform: uppercase; font-size: 0.9em; letter-spacing: 1px; margin-top: 10px; display: block; }
+    </style>
+</head>
+<body>
+    <div class="navbar">
+        <h2>EMP Command Center</h2>
+        <div class="nav-items">
+            <a href="index.html">← Back to Dashboard</a>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="header-section">
+            <h1>Platform Analytics</h1>
+            <p>Real-time metrics and engagement tracking</p>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <span class="stat-icon">👥</span>
+                <p class="stat-number" id="val-users">0</p>
+                <span class="stat-label">Total Users</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-icon">📸</span>
+                <p class="stat-number" id="val-media">0</p>
+                <span class="stat-label">Media Uploaded</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-icon">❤️</span>
+                <p class="stat-number" id="val-likes">0</p>
+                <span class="stat-label">Total Likes</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-icon">🔗</span>
+                <p class="stat-number" id="val-shares">0</p>
+                <span class="stat-label">Total Shares</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-icon">⬇️</span>
+                <p class="stat-number" id="val-downloads">0</p>
+                <span class="stat-label">Total Downloads</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API = "http://127.0.0.1:8000";
+        const token = localStorage.getItem("access_token");
+        const role = localStorage.getItem("user_role");
+        
+        if (!token || role !== "Admin") {
+            alert("Access Denied: Admins Only.");
+            window.location.href = "index.html";
+        }
+
+        async function fetchAnalytics() {
+            try {
+                // Force the browser to pull fresh data, never cached
+                const res = await fetch(`${API}/analytics/dashboard/`, {
+                    headers: { "Authorization": `Bearer ${token}` },
+                    cache: "no-store" 
+                });
+                
+                if(res.ok) {
+                    const data = await res.json();
+                    
+                    const curUsers = parseInt(document.getElementById("val-users").innerText) || 0;
+                    const curMedia = parseInt(document.getElementById("val-media").innerText) || 0;
+                    const curLikes = parseInt(document.getElementById("val-likes").innerText) || 0;
+                    const curShares = parseInt(document.getElementById("val-shares").innerText) || 0;
+                    const curDowns = parseInt(document.getElementById("val-downloads").innerText) || 0;
+
+                    // Shortened to 500ms so it feels incredibly snappy!
+                    animateValue("val-users", curUsers, data.users, 500);
+                    animateValue("val-media", curMedia, data.media, 500);
+                    animateValue("val-likes", curLikes, data.likes, 500);
+                    animateValue("val-shares", curShares, data.shares, 500);
+                    animateValue("val-downloads", curDowns, data.downloads, 500);
+                }
+            } catch(e) { console.error("Failed to load analytics"); }
+        }
+
+        function animateValue(id, start, end, duration) {
+            const obj = document.getElementById(id);
+            
+            // Kill any overlapping animations instantly so they don't fight
+            if (obj.animationTimer) cancelAnimationFrame(obj.animationTimer);
+            
+            // If the number hasn't changed, just set it and exit
+            if (start === end) { obj.innerHTML = end; return; }
+
+            let startTime = null;
+            const step = (timestamp) => {
+                if (!startTime) startTime = timestamp;
+                const progress = Math.min((timestamp - startTime) / duration, 1);
+                
+                // Math.round ensures a flawless tick up OR down
+                obj.innerHTML = Math.round(start + progress * (end - start));
+                
+                if (progress < 1) {
+                    obj.animationTimer = requestAnimationFrame(step);
+                } else {
+                    obj.innerHTML = end; // Force the exact target number at the end
+                }
+            };
+            
+            obj.animationTimer = requestAnimationFrame(step);
+        }
+
+        // Auto-refresh the second the Admin clicks back onto this tab
+        window.addEventListener("focus", fetchAnalytics);
+        window.onload = fetchAnalytics;
+    </script>
+</body>
+</html>

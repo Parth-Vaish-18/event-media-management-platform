@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register | Event Media Pro</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --accent: #60a5fa;
+            --accent-dark: #2563eb;
+            --bg: #080f1a;
+            --surface: rgba(255,255,255,0.04);
+            --border: rgba(255,255,255,0.09);
+            --text: #f1f5f9;
+            --muted: #64748b;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: var(--bg);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text);
+            /* SCROLL BUG FIXED HERE */
+            overflow-y: auto; 
+            padding: 40px 20px;
+        }
+        body::before {
+            content: '';
+            position: fixed; inset: 0;
+            background: radial-gradient(ellipse 70% 55% at 80% 10%, rgba(37,99,235,0.18) 0%, transparent 60%),
+                        radial-gradient(ellipse 55% 45% at 20% 85%, rgba(96,165,250,0.10) 0%, transparent 55%);
+            pointer-events: none;
+        }
+        .card {
+            background: var(--surface);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            padding: 48px 44px;
+            width: 100%;
+            max-width: 440px;
+            box-shadow: 0 32px 64px rgba(0,0,0,0.5);
+            position: relative;
+            z-index: 1;
+        }
+        .logo {
+            font-family: 'Syne', sans-serif;
+            font-size: 1.1em;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+            -webkit-background-clip: text; background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 8px;
+            display: block;
+        }
+        h2 { font-family: 'Syne', sans-serif; font-size: 2em; font-weight: 800; letter-spacing: -0.03em; margin-bottom: 6px; }
+        .subtitle { color: var(--muted); font-size: 0.9em; margin-bottom: 32px; }
+        .input-group { margin-bottom: 18px; }
+        label { display: block; font-size: 0.82em; font-weight: 500; color: var(--muted); margin-bottom: 8px; letter-spacing: 0.04em; text-transform: uppercase; }
+        input, select {
+            width: 100%;
+            padding: 14px 16px;
+            background: rgba(0,0,0,0.25);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            color: var(--text);
+            font-family: 'DM Sans', sans-serif;
+            font-size: 15px;
+            outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        input:focus, select:focus { border-color: var(--accent-dark); box-shadow: 0 0 0 3px rgba(37,99,235,0.2); }
+        input::placeholder { color: #334155; }
+        select option { background: #0f172a; }
+        .role-info { background: rgba(37,99,235,0.1); border: 1px solid rgba(37,99,235,0.2); border-radius: 8px; padding: 10px 14px; font-size: 0.82em; color: #93c5fd; margin-top: 8px; line-height: 1.5; }
+        .btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, var(--accent-dark), var(--accent));
+            border: none; border-radius: 10px;
+            color: white;
+            font-family: 'Syne', sans-serif;
+            font-weight: 700; font-size: 15px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s, opacity 0.2s;
+            box-shadow: 0 6px 20px rgba(37,99,235,0.3);
+            margin-top: 8px;
+        }
+        .btn:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(37,99,235,0.4); }
+        .btn:disabled { opacity: 0.6; cursor: not-allowed; }
+        .error-msg { background: rgba(239,68,68,0.12); border: 1px solid rgba(239,68,68,0.3); color: #fca5a5; padding: 12px 16px; border-radius: 8px; font-size: 0.88em; margin-bottom: 18px; display: none; }
+        .link { display: block; text-align: center; margin-top: 24px; color: var(--muted); text-decoration: none; font-size: 0.9em; transition: color 0.2s; }
+        .link:hover { color: var(--text); }
+        .link span { color: var(--accent); font-weight: 500; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <span class="logo">EMP</span>
+        <h2>Join the platform</h2>
+        <p class="subtitle">Create your account to start exploring event media</p>
+
+        <div class="error-msg" id="error-msg"></div>
+
+        <form id="register-form">
+            <div class="input-group">
+                <label>Full Name</label>
+                <input type="text" id="reg-name" placeholder="Jane Smith" required autocomplete="name">
+            </div>
+            <div class="input-group">
+                <label>Email Address</label>
+                <input type="email" id="reg-email" placeholder="jane@example.com" required autocomplete="email">
+            </div>
+            <div class="input-group">
+                <label>Password</label>
+                <input type="password" id="reg-password" placeholder="Choose a strong password" required minlength="6" autocomplete="new-password">
+            </div>
+            <div class="input-group">
+                <label>Account Role</label>
+                <select id="reg-role">
+                    <option value="Viewer">Viewer — Browse public media</option>
+                    <option value="Club Member">Club Member — Comment & access private albums</option>
+                    <option value="Photographer">Photographer — Upload & manage media</option>
+                    <option value="Admin">Admin — Full Platform Access</option>
+                </select>
+                <div class="role-info" id="role-info">You can view all public event media.</div>
+            </div>
+
+            <div class="input-group" id="admin-key-group" style="display: none;">
+                <label style="color: #ef4444;">Admin Secret Key</label>
+                <input type="password" id="reg-admin-key" placeholder="Enter the master admin passcode">
+            </div>
+
+            <button type="submit" class="btn" id="reg-btn">Create Account</button>
+        </form>
+
+        <a href="login.html" class="link">Already have an account? <span>Sign In</span></a>
+    </div>
+
+    <script>
+        const API = "http://127.0.0.1:8000";
+
+        const roleDescriptions = {
+            "Viewer": "You can view all public event media.",
+            "Club Member": "You can view private albums, like, comment, and favourite media.",
+            "Photographer": "You can upload photos and videos, and create new events.",
+            "Admin": "Requires authorization passcode. Full control over platform analytics and users."
+        };
+
+        // This function shows or hides the Admin Key box when the dropdown changes
+        document.getElementById('reg-role').addEventListener('change', (e) => {
+            const role = e.target.value;
+            document.getElementById('role-info').textContent = roleDescriptions[role] || '';
+            
+            if (role === "Admin") {
+                document.getElementById('admin-key-group').style.display = 'block'; // Make it visible
+            } else {
+                document.getElementById('admin-key-group').style.display = 'none'; // Hide it
+            }
+        });
+
+        document.getElementById('register-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('reg-btn');
+            const errBox = document.getElementById('error-msg');
+            errBox.style.display = 'none';
+            btn.disabled = true;
+            btn.textContent = 'Creating account…';
+
+            const data = {
+                name: document.getElementById('reg-name').value.trim(),
+                email: document.getElementById('reg-email').value.trim(),
+                password: document.getElementById('reg-password').value,
+                role: document.getElementById('reg-role').value,
+                admin_secret: document.getElementById('reg-admin-key').value || null
+            };
+
+            try {
+                const res = await fetch(`${API}/register`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data),
+                });
+                
+                let result;
+                try { result = await res.json(); } catch { throw new Error("Server crashed. Did you delete the old .db file and restart the server?"); }
+
+                if (res.ok) {
+                    alert('✅ Registration successful! Please sign in.');
+                    window.location.href = 'login.html';
+                } else {
+                    errBox.textContent = result.detail || 'Registration failed. Please try again.';
+                    errBox.style.display = 'block';
+                }
+            } catch(error) {
+                errBox.textContent = error.message || 'Could not connect to server.';
+                errBox.style.display = 'block';
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Create Account';
+            }
+        });
+    </script>
+</body>
+</html>

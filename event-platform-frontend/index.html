@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard | Event Media Pro</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --accent: #38ef7d;
+            --accent-dark: #11998e;
+            --bg: #f0f4f8;
+            --surface: #ffffff;
+            --navbar: #0a1628;
+            --text: #0f172a;
+            --muted: #64748b;
+            --border: #e2e8f0;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+        /* NAVBAR */
+        .navbar {
+            background: var(--navbar);
+            padding: 0 32px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            height: 64px;
+            position: sticky; top: 0; z-index: 100;
+            box-shadow: 0 1px 0 rgba(255,255,255,0.06);
+        }
+        .logo {
+            font-family: 'Syne', sans-serif;
+            font-size: 1.3em;
+            font-weight: 800;
+            background: linear-gradient(90deg, var(--accent), var(--accent-dark));
+            -webkit-background-clip: text; background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -0.02em;
+        }
+        .nav-right { display: flex; align-items: center; gap: 10px; }
+        .nav-link, .nav-btn {
+            color: #94a3b8; text-decoration: none; font-size: 0.88em; font-weight: 500;
+            padding: 7px 14px; border-radius: 8px;
+            background: rgba(255,255,255,0.07);
+            border: 1px solid rgba(255,255,255,0.08);
+            cursor: pointer; transition: all 0.2s;
+        }
+        .nav-link:hover, .nav-btn:hover { background: rgba(255,255,255,0.12); color: #f1f5f9; }
+        .nav-btn.danger:hover { background: #ef4444; border-color: #ef4444; color: white; }
+        .role-pill {
+            background: rgba(56,239,125,0.12);
+            border: 1px solid rgba(56,239,125,0.25);
+            color: var(--accent);
+            font-size: 0.78em;
+            font-weight: 600;
+            padding: 4px 12px;
+            border-radius: 20px;
+            letter-spacing: 0.03em;
+        }
+
+        .container { max-width: 1000px; margin: 0 auto; padding: 40px 20px; }
+
+        /* PAGE HEADER */
+        .page-header { margin-bottom: 36px; }
+        .page-header h1 { font-family: 'Syne', sans-serif; font-size: 2.2em; font-weight: 800; letter-spacing: -0.03em; }
+        .page-header p { color: var(--muted); margin-top: 6px; }
+
+        /* CREATE EVENT PANEL */
+        .create-panel {
+            background: var(--surface);
+            border-radius: 16px;
+            border: 1px solid var(--border);
+            box-shadow: 0 4px 16px rgba(0,0,0,0.06);
+            padding: 28px;
+            margin-bottom: 36px;
+            display: none;
+            border-top: 3px solid var(--accent-dark);
+        }
+        .create-panel h3 { font-family: 'Syne', sans-serif; font-size: 1.05em; font-weight: 700; color: var(--accent-dark); margin-bottom: 20px; }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+        .form-row.triple { grid-template-columns: 2fr 1fr 1fr; }
+        .form-input {
+            padding: 12px 16px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            background: #f8fafc;
+            color: var(--text);
+        }
+        .form-input:focus { border-color: var(--accent-dark); box-shadow: 0 0 0 3px rgba(17,153,142,0.12); background: white; }
+        .form-input::placeholder { color: #94a3b8; }
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent-dark), var(--accent));
+            color: #001a0e; border: none; padding: 12px 24px; border-radius: 10px;
+            font-family: 'Syne', sans-serif; font-weight: 700; font-size: 14px;
+            cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 4px 14px rgba(56,239,125,0.3);
+        }
+        .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(56,239,125,0.4); }
+
+        /* CONTROLS BAR */
+        .controls-bar { display: flex; gap: 12px; margin-bottom: 28px; align-items: center; }
+        .search-input {
+            flex: 1; padding: 14px 20px;
+            border: 2px solid var(--border);
+            border-radius: 50px; font-size: 15px;
+            font-family: 'DM Sans', sans-serif;
+            outline: none; transition: 0.2s;
+            background: white;
+        }
+        .search-input:focus { border-color: #3b82f6; box-shadow: 0 0 0 4px rgba(59,130,246,0.08); }
+        .sort-select {
+            padding: 14px 18px;
+            border: 2px solid var(--border);
+            border-radius: 50px;
+            font-size: 14px;
+            font-family: 'DM Sans', sans-serif;
+            background: white;
+            cursor: pointer; outline: none;
+            color: var(--text);
+            min-width: 220px;
+        }
+
+        /* EVENT GRID */
+        .events-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(310px, 1fr)); gap: 24px; }
+        .event-card {
+            background: var(--surface);
+            border-radius: 16px;
+            border: 1px solid var(--border);
+            padding: 0;
+            cursor: pointer;
+            transition: transform 0.25s, box-shadow 0.25s;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.04);
+        }
+        .event-card:hover { transform: translateY(-4px); box-shadow: 0 12px 32px rgba(0,0,0,0.10); }
+        .event-card-top { height: 6px; background: linear-gradient(90deg, var(--accent-dark), var(--accent)); }
+        .event-card-body { padding: 24px; }
+        .event-name { font-family: 'Syne', sans-serif; font-size: 1.1em; font-weight: 700; margin-bottom: 6px; color: var(--text); }
+        .event-date { color: var(--muted); font-size: 0.85em; margin-bottom: 12px; display: flex; align-items: center; gap: 5px; }
+        .event-desc { color: #475569; font-size: 0.9em; line-height: 1.5; margin-bottom: 16px; min-height: 40px; }
+        .event-cat { display: inline-block; background: #eff6ff; color: #2563eb; padding: 4px 12px; border-radius: 20px; font-size: 0.78em; font-weight: 600; }
+        .empty-state { grid-column: 1/-1; text-align: center; padding: 60px; color: var(--muted); }
+        .empty-state span { font-size: 3em; display: block; margin-bottom: 12px; }
+
+        @media (max-width: 700px) {
+            .form-row, .form-row.triple { grid-template-columns: 1fr; }
+            .controls-bar { flex-direction: column; }
+            .sort-select { min-width: 100%; }
+        }
+
+        .event-card-footer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-top: 12px;
+        }
+
+        .media-count-pill {
+            background: #f0fdf4;
+            color: #16a34a;
+            border: 1px solid #bbf7d0;
+            font-size: 0.78em;
+            font-weight: 600;
+            padding: 4px 12px;
+            border-radius: 20px;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="logo">EMP</div>
+        <div class="nav-right">
+            <span class="role-pill" id="role-pill"></span>
+            <a href="profile.html" class="nav-link">👤 Profile</a>
+            <span class="nav-link" id="analytics-link" style="display:none; cursor:pointer;" onclick="window.location.href='analytics.html'">📊 Analytics</span>
+            <button class="nav-btn danger" onclick="logout()">Sign Out</button>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="page-header">
+            <h1>Event Dashboard</h1>
+            <p id="welcome-msg">Browse and discover event media</p>
+        </div>
+
+        <!-- Admin / Photographer: Create Event Panel -->
+        <div class="create-panel" id="create-panel">
+            <h3>✦ Create New Event</h3>
+            <form id="create-form">
+                <div class="form-row triple">
+                    <input type="text" class="form-input" id="ev-name" placeholder="Event name" required>
+                    <input type="date" class="form-input" id="ev-date" required>
+                    <input type="text" class="form-input" id="ev-cat" placeholder="Category (Tech, Sports…)" required>
+                </div>
+                <div class="form-row">
+                    <input type="text" class="form-input" id="ev-desc" placeholder="Brief description (optional)">
+                    <button type="submit" class="btn-primary">Publish Event →</button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Search & Sort Controls -->
+        <div class="controls-bar">
+            <input type="text" class="search-input" id="search-input" placeholder="🔍  Search events by name, category, or description…">
+            <select class="sort-select" id="sort-select" onchange="fetchEvents()">
+                <option value="date">🕒  Newest First</option>
+                <option value="name">🔠  Sort by Name (A–Z)</option>
+                <option value="category">🏷  Sort by Category</option>
+            </select>
+        </div>
+
+        <div class="events-grid" id="events-grid">
+            <div class="empty-state"><span>📅</span>Loading events…</div>
+        </div>
+    </div>
+
+    <script>
+        const API = "http://127.0.0.1:8000";
+        const token = localStorage.getItem("access_token");
+        const role  = localStorage.getItem("user_role");
+        const name  = localStorage.getItem("user_name");
+
+        if (!token) window.location.href = "login.html";
+
+        // Populate UI based on role
+        document.getElementById("role-pill").textContent = role || "Guest";
+        document.getElementById("welcome-msg").textContent = `Hello, ${name || "there"} — what's happening today?`;
+
+        if (role === "Admin" || role === "Photographer") {
+            document.getElementById("create-panel").style.display = "block";
+        }
+        if (role === "Admin") {
+            document.getElementById("analytics-link").style.display = "inline-flex";
+        }
+
+        function logout() {
+            if (!confirm("Are you sure you want to sign out?")) return;
+            localStorage.clear();
+            window.location.href = "login.html";
+        }
+
+        let allEvents = [];
+
+        async function fetchEvents() {
+            const sortBy = document.getElementById("sort-select").value;
+            try {
+                const res = await fetch(`${API}/events/?sort_by=${sortBy}`, {
+                    headers: { "Authorization": `Bearer ${token}` },
+                });
+                if (res.status === 401) { logout(); return; }
+                if (res.ok) {
+                    allEvents = await res.json();
+                    filterAndRender();
+                }
+            } catch (e) {
+                document.getElementById("events-grid").innerHTML = `<div class="empty-state"><span>⚠️</span>Could not reach server.</div>`;
+            }
+        }
+
+        function filterAndRender() {
+            const term = document.getElementById("search-input").value.toLowerCase();
+            const filtered = term
+                ? allEvents.filter(ev =>
+                    ev.name.toLowerCase().includes(term) ||
+                    (ev.category && ev.category.toLowerCase().includes(term)) ||
+                    (ev.description && ev.description.toLowerCase().includes(term))
+                  )
+                : allEvents;
+            renderEvents(filtered);
+        }
+
+        document.getElementById("search-input").addEventListener("input", filterAndRender);
+
+        function renderEvents(list) {
+            const grid = document.getElementById("events-grid");
+            if (!list.length) {
+                grid.innerHTML = `<div class="empty-state"><span>🔍</span>No events found.</div>`;
+                return;
+            }
+            grid.innerHTML = list.map(ev => {
+                const d = new Date(ev.date).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
+                const desc = (ev.description || "No description provided.").substring(0, 90) + (ev.description && ev.description.length > 90 ? "…" : "");
+                
+                // Media count pill
+                const countPill = `<span class="media-count-pill">📸 ${ev.media_count || 0} item${ev.media_count !== 1 ? "s" : ""}</span>`;
+
+                return `
+                    <div class="event-card" onclick="window.location.href='event.html?id=${ev.id}&name=${encodeURIComponent(ev.name)}'">
+                        <div class="event-card-top"></div>
+                        <div class="event-card-body">
+                            <div class="event-name">${ev.name}</div>
+                            <div class="event-date">📅 ${d}</div>
+                            <div class="event-desc">${desc}</div>
+                            <div class="event-card-footer">
+                                <span class="event-cat">${ev.category}</span>
+                                ${countPill}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join("");
+        }
+
+        document.getElementById("create-form").addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const payload = {
+                name: document.getElementById("ev-name").value.trim(),
+                date: document.getElementById("ev-date").value + "T00:00:00",
+                category: document.getElementById("ev-cat").value.trim(),
+                description: document.getElementById("ev-desc").value.trim() || null,
+            };
+            const res = await fetch(`${API}/events/`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
+                body: JSON.stringify(payload),
+            });
+            if (res.ok) {
+                document.getElementById("create-form").reset();
+                fetchEvents();
+            } else {
+                const err = await res.json();
+                alert("Error: " + (err.detail || "Could not create event."));
+            }
+        });
+
+        window.onload = fetchEvents;
+    </script>
+</body>
+</html>

@@ -1,0 +1,11 @@
+# Security
+.env
+# Python Cache
+__pycache__/
+*.pyc
+# Virtual Environment
+venv/
+env/
+# Database & Local Uploads
+*.db
+uploads/

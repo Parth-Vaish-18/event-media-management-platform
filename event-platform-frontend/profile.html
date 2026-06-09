@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Profile | Event Media Pro</title>
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; margin: 0; padding: 0; color: #1e293b; }
+        .navbar { background: #0f172a; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; color: white; }
+        .navbar h2 { margin: 0; font-size: 1.5em; background: -webkit-linear-gradient(#38ef7d, #11998e); background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .nav-items a, .nav-items button { background: rgba(255,255,255,0.1); border: none; color: white; padding: 8px 15px; border-radius: 5px; cursor: pointer; transition: 0.3s; text-decoration: none; margin-left: 10px; font-size: 0.9em; }
+        .nav-items button:hover { background: #e74c3c; }
+
+        .layout { display: grid; grid-template-columns: 320px 1fr; gap: 30px; max-width: 1000px; margin: 40px auto; padding: 0 20px; align-items: start; }
+
+        /* Left Column: AI Trainer */
+        .trainer-box { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); text-align: center; border-top: 5px solid #38ef7d; position: sticky; top: 40px; }
+        .trainer-box h3 { margin-top: 0; color: #0f172a; font-size: 1.4em; }
+        .trainer-box p { color: #64748b; font-size: 0.95em; margin-bottom: 20px; }
+        
+        .drop-zone { border: 2px dashed #cbd5e1; border-radius: 10px; padding: 40px 20px; background: #f8fafc; cursor: pointer; transition: 0.3s; }
+        .drop-zone.dragover { background: #e2e8f0; border-color: #3b82f6; }
+        .drop-zone input { display: none; }
+        #selfie-preview { max-width: 150px; border-radius: 50%; display: none; margin: 0 auto 15px auto; box-shadow: 0 4px 15px rgba(0,0,0,0.1); border: 4px solid #38ef7d; }
+        
+        .btn-upload { width: 100%; background: linear-gradient(90deg, #11998e, #38ef7d); color: white; border: none; padding: 14px; border-radius: 8px; font-weight: bold; font-size: 16px; cursor: pointer; margin-top: 20px; box-shadow: 0 4px 15px rgba(56, 239, 125, 0.3); transition: transform 0.2s; }
+        .btn-upload:hover { transform: translateY(-2px); }
+        .btn-upload:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+        /* Right Column: AI Matches Gallery */
+        .gallery-section h2 { margin-top: 0; color: #0f172a; display: flex; align-items: center; gap: 10px; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 25px; }
+        .card { background: white; border-radius: 15px; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.05); transition: transform 0.3s; }
+        .card:hover { transform: translateY(-5px); }
+        .card .media-content { width: 100%; height: 250px; object-fit: cover; background-color: #000; }
+        .card-body { padding: 15px; }
+        .ai-tags { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 15px; }
+        .tag { background: #eff6ff; color: #2563eb; padding: 4px 10px; border-radius: 20px; font-size: 0.75em; font-weight: bold; }
+        .btn-view { display: block; text-align: center; background: #e2e8f0; color: #334155; text-decoration: none; padding: 10px; border-radius: 8px; font-weight: bold; font-size: 0.9em; transition: 0.2s; }
+        .btn-view:hover { background: #cbd5e1; }
+        
+        /* Responsive adjustments */
+        @media (max-width: 900px) {
+            .layout { grid-template-columns: 1fr; }
+            .trainer-box { position: static; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="navbar">
+        <h2>EMP Dashboard</h2>
+        <div class="nav-items">
+            <a href="index.html">← Back to Events</a>
+            <button onclick="logout()">Logout</button>
+        </div>
+    </div>
+
+    <div class="layout">
+        <div class="trainer-box">
+            <h3>🤖 AI Facial Recognition</h3>
+            <p>Upload a clear reference photo. Our DeepFace AI will automatically find you in all future event photos.</p>
+            
+            <form id="selfie-form">
+                <div class="drop-zone" id="drop-zone">
+                    <img id="selfie-preview" src="">
+                    <p id="drop-text">📸 Click to upload<br>your photo! </p>
+                    <input type="file" id="file-input" accept="image/*" required>
+                </div>
+                <button type="submit" class="btn-upload" id="upload-btn">Make you recognize<br> for future posts </button>
+            </form>
+        </div>
+
+        <div class="gallery-section">
+            <h2>✨ My Matched Moments</h2>
+            <div class="grid" id="gallery-grid"></div>
+        </div>
+    </div>
+
+    <script>
+        const token = localStorage.getItem("access_token");
+        if (!token) window.location.href = "login.html";
+
+        function logout() {
+            if (!confirm("Are you sure you want to sign out?")) return;
+            localStorage.clear();
+            window.location.href = "login.html";
+        }
+
+        // --- SELFIE DRAG & DROP ---
+        const dropZone = document.getElementById('drop-zone');
+        const fileInput = document.getElementById('file-input');
+        const preview = document.getElementById('selfie-preview');
+        const dropText = document.getElementById('drop-text');
+
+        dropZone.onclick = () => fileInput.click();
+        dropZone.ondragover = (e) => { e.preventDefault(); dropZone.classList.add('dragover'); };
+        dropZone.ondragleave = () => dropZone.classList.remove('dragover');
+        dropZone.ondrop = (e) => {
+            e.preventDefault(); dropZone.classList.remove('dragover');
+            if (e.dataTransfer.files.length) { fileInput.files = e.dataTransfer.files; showPreview(); }
+        };
+        fileInput.onchange = showPreview;
+
+        function showPreview() {
+            if(fileInput.files.length > 0) {
+                preview.src = URL.createObjectURL(fileInput.files[0]);
+                preview.style.display = 'block';
+                dropText.style.display = 'none';
+            }
+        }
+
+        const API = "http://127.0.0.1:8000"; // Added global config constant
+
+        // --- TRAIN AI ROUTE ---
+        document.getElementById('selfie-form').onsubmit = async (e) => {
+            e.preventDefault();
+            const formData = new FormData();
+            formData.append("file", fileInput.files[0]);
+
+            const btn = document.getElementById('upload-btn');
+            btn.innerText = "⏳ Extracting Features..."; 
+            btn.disabled = true;
+
+            try {
+                const res = await fetch(`${API}/profile/selfie/`, {
+                    method: "POST", headers: { "Authorization": `Bearer ${token}` }, body: formData
+                });
+                const data = await res.json();
+                
+                if(res.ok) {
+                    alert("✅ " + data.message);
+                } else {
+                    alert("❌ Error: " + data.detail);
+                }
+            } catch(e) { 
+                alert("Network error."); 
+            } finally { 
+                btn.innerText = "Make you recognize\n for future posts"; 
+                btn.disabled = false; 
+            }
+        };
+
+        // --- FETCH MATCHES ---
+        async function loadMatches() {
+            try {
+                const res = await fetch(`${API}/profile/matches/`, {
+                    headers: { "Authorization": `Bearer ${token}` }
+                });
+                
+                if (res.ok) {
+                    const matches = await res.json();
+                    renderGallery(matches);
+                }
+            } catch(e) { console.error(e); }
+        }
+
+        function renderGallery(items) {
+            const grid = document.getElementById('gallery-grid');
+            grid.innerHTML = items.length ? "" : "<p style='color: #94a3b8;'>No matches found yet. The AI is watching for your face!</p>";
+            
+            items.forEach(m => {
+                const tagsHtml = (m.ai_tags || []).map(t => `<span class="tag">#${t}</span>`).join('');
+                
+                const mediaHtml = m.type === 'video' 
+                    ? `<video class="media-content" src="${m.url}" controls preload="metadata"></video>`
+                    : `<img class="media-content" src="${m.url}">`;
+                
+                grid.innerHTML += `
+                    <div class="card">
+                        ${mediaHtml}
+                        <div class="card-body">
+                            <div class="ai-tags">${tagsHtml}</div>
+                            <a href="event.html?id=${m.event_id}" class="btn-view">View in Original Event Album</a>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        window.onload = loadMatches;
+    </script>
+</body>
+</html>
