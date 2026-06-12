@@ -525,53 +525,39 @@ def delete_media(media_id: int, db: Session = Depends(get_db), current_user: mod
     return {"message": "Media deleted successfully."}
 
 # ---------------------------------------------------------------------------
-# AI CAPTION GENERATOR (Bonus Feature)
+# AI CAPTION GENERATOR (Bonus Feature) — uses BLIP via ai_utils
 # ---------------------------------------------------------------------------
-from transformers import pipeline as hf_pipeline
-
-print("Warming up HuggingFace GPT model for captions...")
-try:
-    caption_generator = hf_pipeline("text-generation", model="distilgpt2")
-except Exception as e:
-    print(f"Failed to load AI Model: {e}")
-    caption_generator = None
-
 @app.get("/media/{media_id}/caption/", tags=["AI"])
 def get_ai_caption(
     media_id: int,
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
 ):
-    """Generates an Instagram-style caption using HuggingFace GPT model."""
     media = db.query(models.Media).filter(models.Media.id == media_id).first()
     if not media:
         raise HTTPException(status_code=404, detail="Media not found.")
 
     tags = json.loads(media.ai_tags) if media.ai_tags else []
-    if not tags:
-        return {"caption": "Making incredible memories! ✨📸 #Event"}
+    hashtags = " ".join([f"#{t.replace(' ', '')}" for t in tags[:4]])
 
-    if caption_generator is None:
-         return {"caption": "Incredible moments! ✨📸 " + " ".join([f"#{t.replace(' ', '')}" for t in tags[:3]])}
-
-    prompt = f"Wow! The {tags[0]} is looking great. It looks very "
     try:
-        output = caption_generator(
-            prompt,
-            max_new_tokens=10,
-            num_return_sequences=1,
-            pad_token_id=50256,
-            temperature=0.7,
-            do_sample=True,
-        )[0]["generated_text"]
-
-        clean_text = output.split("\n")[0].strip()
-        if len(clean_text) > 120:
-            clean_text = f"Amazing moments captured! ✨"
-
-        hashtags = " ".join([f"#{t.replace(' ', '')}" for t in tags[:3]])
-        return {"caption": f"{clean_text} 📸 {hashtags}"}
-
-    except Exception:
-        hashtags = " ".join([f"#{t.replace(' ', '')}" for t in tags[:3]])
-        return {"caption": f"Incredible moments! ✨📸 {hashtags}"}
+        import boto3, os
+        from dotenv import load_dotenv
+        load_dotenv()
+        s3 = boto3.client(
+            's3',
+            aws_access_key_id=os.getenv("AWS_ACCESS_KEY_ID"),
+            aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY"),
+            region_name=os.getenv("AWS_REGION", "eu-north-1")
+        )
+        import io as _io
+        bucket = os.getenv("AWS_BUCKET_NAME")
+        key = media.s3_url.split(".amazonaws.com/")[-1]
+        obj = s3.get_object(Bucket=bucket, Key=key)
+        image_bytes = obj["Body"].read()
+        result = ai_utils.process_image_via_ai(image_bytes)
+        caption = result.get("caption", "Amazing moments!")
+        return {"caption": f"{caption.capitalize()} ✨ {hashtags}"}
+    except Exception as e:
+        print(f"Caption error: {e}")
+        return {"caption": f"Incredible moments! ✨ {hashtags}"}
